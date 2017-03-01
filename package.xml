@@ -1,0 +1,56 @@
+<package format="2">
+  <name>py_trees_ros</name>
+  <version>0.5.0</version>
+  <description>
+    Ros extensions and behaviours for py_trees.
+  </description>
+
+  <maintainer email="stonier@yujinrobot.com">Daniel Stonier</maintainer>
+  <maintainer email="m.staniaszek@gmail.com">Michal Staniaszek</maintainer>
+  <maintainer email="naveedhd@gmail.com">Naveed Usmani</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://ros.org/wiki/py_trees</url>
+  <url type="repository">https://github.com/stonier/py_trees_ros</url>
+  <url type="bugtracker">https://github.com/stonier/py_trees_ros/issues</url>
+
+  <author>Daniel Stonier</author>
+  <author>Michal Staniaszek</author>
+  <author>Naveed Usmani</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <doc_depend>python-sphinx-argparse</doc_depend>
+  <doc_depend>python-sphinx-rtd-theme</doc_depend>
+  <doc_depend>python-catkin-pkg</doc_depend>
+
+  <!-- mocking & simulation dependencies -->
+  <exec_depend>dynamic_reconfigure</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>move_base_msgs</exec_depend>
+  <exec_depend>python-termcolor</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+
+  <!-- core dependencies -->
+  <exec_depend>py_trees_msgs</exec_depend>
+  <exec_depend>python-rospkg</exec_depend>
+  <exec_depend>rosbag</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>unique_id</exec_depend>
+  <exec_depend>uuid_msgs</exec_depend>
+
+  <!--
+  <exec_depend>rospy_tutorials</exec_depend>
+ -->
+
+  <test_depend>rostest</test_depend>
+  <test_depend>rosunit</test_depend>
+  <test_depend>geometry_msgs</test_depend>
+
+  <export>
+    <rosdoc config="rosdoc.yaml"/>
+  </export>
+</package>
