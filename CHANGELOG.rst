@@ -1,6 +1,15 @@
 Changelog
 =========
 
+0.5.2 (2017-03-19)
+------------------
+* [infra] add missing actionlib dependencies
+
+0.5.1 (2017-03-19)
+------------------
+* [tutorials] 6 - context switching
+* [tutorials] re-insert missing images
+
 0.5.0 (2017-02-21)
 ------------------
 * [docs] new and shiny index added
