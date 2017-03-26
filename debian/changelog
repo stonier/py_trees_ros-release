@@ -1,0 +1,45 @@
+ros-kinetic-py-trees-ros (0.5.4-0wily) wily; urgency=high
+
+  * [docs] faq added
+  * [tutorials] 9 - bagging
+  * [infra] various dependency fixes for tests and autodoc
+  * [tests] fix broken subscrirber test
+
+ -- Daniel Stonier <stonier@yujinrobot.com>  Sat, 25 Mar 2017 04:00:00 -0000
+
+ros-kinetic-py-trees-ros (0.5.3-0wily) wily; urgency=high
+
+  * [tutorials] 8 - dynamic loading, insertion and execution
+  * [tutorials] 7 - docking, undocking, cancelling and recovery
+
+ -- Daniel Stonier <stonier@yujinrobot.com>  Tue, 21 Mar 2017 04:00:00 -0000
+
+ros-kinetic-py-trees-ros (0.5.2-0wily) wily; urgency=high
+
+  * [infra] add missing actionlib dependencies
+
+ -- Daniel Stonier <stonier@yujinrobot.com>  Sun, 19 Mar 2017 04:00:00 -0000
+
+ros-kinetic-py-trees-ros (0.5.1-0wily) wily; urgency=high
+
+  * [tutorials] 6 - context switching
+  * [tutorials] re-insert missing images
+
+ -- Daniel Stonier <stonier@yujinrobot.com>  Sun, 19 Mar 2017 04:00:00 -0000
+
+ros-kinetic-py-trees-ros (0.5.0-0wily) wily; urgency=high
+
+  * [docs] new and shiny index added
+  * [tutorials] qt dashboard support
+  * [tutorials] 5 - tree scanning added
+  * [tutorials] 4 - tree introspection added
+  * [tutorials] 3 - blackboards added
+  * [tutorials] 2 - battery low branch added
+  * [tutorials] 1 - data gathering added
+  * [mock] a mock robot for tutorials and testing
+  * [behaviours] action client, battery behaviours added
+  * [infra] refactoring for kinetic
+
+ -- Daniel Stonier <stonier@yujinrobot.com>  Tue, 21 Feb 2017 05:00:00 -0000
+
+
