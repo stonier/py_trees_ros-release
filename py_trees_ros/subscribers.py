@@ -126,8 +126,9 @@ class Handler(py_trees.behaviour.Behaviour):
 
 class CheckData(Handler):
     """
-    Check a subscriber to see if it has received data
-    and optionally whether that data, or part of it has a specific value.
+    Check a subscriber to see if it has received data.
+
+    It optionally checks whether that data, or part of it has a specific value.
 
     **Usage Patterns**
 
@@ -409,9 +410,11 @@ class ToBlackboard(Handler):
 
 class EventToBlackboard(Handler):
     """
-    This will listen for events (:obj:`std_msgs.msg.Empty`) on a
-    subscriber and write the result (True if at least one message was received,
-    False otherwise) to a bool on the blackboard. This can then be consumed
+    Listen for events (:obj:`std_msgs.msg.Empty`) on a
+    subscriber and writes the result to the blackboard.
+
+    This will write True if at least one message was received,
+    False otherwise to a bool. This can then be consumed
     by the tree's tick. No need to clean up, it will write anew on the next tick.
 
     .. tip::
