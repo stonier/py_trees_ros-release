@@ -1,6 +1,6 @@
 <package format="2">
   <name>py_trees_ros</name>
-  <version>0.5.5</version>
+  <version>0.5.6</version>
   <description>
     Ros extensions and behaviours for py_trees.
   </description>
@@ -27,6 +27,7 @@
   <doc_depend>python-sphinx-rtd-theme</doc_depend>
   <doc_depend>python-catkin-pkg</doc_depend>
   <doc_depend>py_trees</doc_depend>
+  <doc_depend>py_trees_msgs</doc_depend>
 
   <!-- mocking & simulation dependencies -->
   <exec_depend>dynamic_reconfigure</exec_depend>
