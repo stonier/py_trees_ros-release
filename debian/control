@@ -1,0 +1,12 @@
+Source: ros-kinetic-py-trees-ros
+Section: misc
+Priority: extra
+Maintainer: Daniel Stonier <stonier@yujinrobot.com>
+Build-Depends: debhelper (>= 9.0.0), python-setuptools, ros-kinetic-catkin, ros-kinetic-geometry-msgs, ros-kinetic-py-trees, ros-kinetic-python-qt-binding, ros-kinetic-rostest, ros-kinetic-rosunit
+Homepage: http://ros.org/wiki/py_trees
+Standards-Version: 3.9.2
+
+Package: ros-kinetic-py-trees-ros
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, python-rospkg, python-termcolor, ros-kinetic-actionlib, ros-kinetic-actionlib-msgs, ros-kinetic-dynamic-reconfigure, ros-kinetic-geometry-msgs, ros-kinetic-move-base-msgs, ros-kinetic-nav-msgs, ros-kinetic-py-trees, ros-kinetic-py-trees-msgs, ros-kinetic-rosbag, ros-kinetic-rospy, ros-kinetic-sensor-msgs, ros-kinetic-std-msgs, ros-kinetic-unique-id, ros-kinetic-uuid-msgs
+Description: Ros extensions and behaviours for py_trees.
