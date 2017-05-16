@@ -1,3 +1,26 @@
+## py_trees_ros (kinetic) - 0.5.11-0
+
+The packages in the `py_trees_ros` repository were released into the `kinetic` distro by running `/usr/bin/bloom-release --track kinetic --rosdistro kinetic py_trees_ros` on `Tue, 16 May 2017 02:28:23 -0000`
+
+The `py_trees_ros` package was released.
+
+Version of package(s) in repository `py_trees_ros`:
+
+- upstream repository: https://github.com/stonier/py_trees_ros.git
+- release repository: https://github.com/stonier/py_trees_ros-release.git
+- rosdistro version: `0.5.10-0`
+- old version: `0.5.10-0`
+- new version: `0.5.11-0`
+
+Versions of tools used:
+
+- bloom version: `0.5.26`
+- catkin_pkg version: `0.3.1`
+- rosdep version: `0.11.5`
+- rosdistro version: `0.6.1`
+- vcstools version: `0.1.39`
+
+
 ## py_trees_ros (kinetic) - 0.5.10-0
 
 The packages in the `py_trees_ros` repository were released into the `kinetic` distro by running `/usr/bin/bloom-release --track kinetic --rosdistro kinetic py_trees_ros` on `Wed, 03 May 2017 05:51:37 -0000`
