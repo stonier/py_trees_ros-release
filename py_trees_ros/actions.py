@@ -42,24 +42,14 @@ class ActionClient(py_trees.behaviour.Behaviour):
         action_spec (:obj:`any`): spec type for the action (e.g. move_base_msgs.msg.MoveBaseAction)
         action_goal (:obj:`any`): preconfigured action goal (e.g. move_base_msgs.msg.MoveBaseGoal())
         action_namespace (:obj:`str`): where you can find the action topics
-        override_feedback_message_on_running (:obj:`str`): override the feedback message from the server
-
-    Feedback messages are often accompanied with detailed messages that continuously change - since these
-    are not significant and we don't want to log every change due to these messages, you can provide an override
-    here that simply signifies the action is running.
-
-    @todo: a more comprehensive way of filtering/parsing feedback messages to customise a running state so
-    that it can identify and react to 'significant' events while running.
     """
-    def __init__(self, name="Action Client", action_spec=None, action_goal=None, action_namespace="/action",
-                 override_feedback_message_on_running="moving"):
+    def __init__(self, name="Action Client", action_spec=None, action_goal=None, action_namespace="/action"):
         super(ActionClient, self).__init__(name)
         self.action_client = None
         self.sent_goal = False
         self.action_spec = action_spec
         self.action_goal = action_goal
         self.action_namespace = action_namespace
-        self.override_feedback_message_on_running = override_feedback_message_on_running
 
     def setup(self, timeout):
         """
@@ -99,19 +89,21 @@ class ActionClient(py_trees.behaviour.Behaviour):
             return py_trees.Status.INVALID
         # pity there is no 'is_connected' api like there is for c++
         if not self.sent_goal:
+            print("Goal %s" % str(self.action_goal))
             self.action_client.send_goal(self.action_goal)
             self.sent_goal = True
             self.feedback_message = "sent goal to the action server"
             return py_trees.Status.RUNNING
-        self.feedback_message = self.action_client.get_goal_status_text()
-        if self.action_client.get_state() in [actionlib_msgs.GoalStatus.ABORTED,
-                                              actionlib_msgs.GoalStatus.PREEMPTED]:
+        if self.action_client.get_state() == actionlib_msgs.GoalStatus.ABORTED:
+            result = self.action_client.get_result()
+            self.feedback_message = result.message
             return py_trees.Status.FAILURE
         result = self.action_client.get_result()
         if result:
+            self.feedback_message = "goal reached"
             return py_trees.Status.SUCCESS
         else:
-            self.feedback_message = self.override_feedback_message_on_running
+            self.feedback_message = "moving"
             return py_trees.Status.RUNNING
 
     def terminate(self, new_status):
