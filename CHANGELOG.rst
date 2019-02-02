@@ -2,6 +2,11 @@
 Changelog
 =========
 
+0.5.15 (2019-02-02)
+-------------------
+* [programs] blackboard-watcher can operate on the entire blackboard
+* [programs] tree-watcher added
+
 0.5.13 (2017-05-28)
 -------------------
 * [doc] add many missing packages to satiate autodoc

@@ -27,9 +27,10 @@ import functools
 import py_trees_msgs.srv as py_trees_srvs
 import rospy
 import py_trees.console as console
-import rosservice
 import sys
 import std_msgs.msg as std_msgs
+
+from . import utilities
 
 ##############################################################################
 # Classes
@@ -101,10 +102,21 @@ def pretty_print_variables(variables):
 
 
 def echo_sub_blackboard(sub_blackboard):
+    # TODO: have the blackboard publish yaml/json/pickled data
+    # and do the pretty printing here 
     print "%s" % sub_blackboard.data
 
 
-def spin_ros_node(received_topic, namespace):
+def watch_blackboard(namespace):
+    rospy.init_node("blackboard_watcher", anonymous=True)
+    # TODO: this will fall over if anyone actually remaps the blackboard name
+    # Solution 1: command line argument (pushes the work to the user)
+    # Solution 2: have a unique type for the blackboard (not std_msgs/String), look it up
+    rospy.Subscriber(namespace + "/blackboard", std_msgs.String, echo_sub_blackboard)
+    while not rospy.is_shutdown():
+        rospy.spin()
+
+def watch_sub_blackboard(received_topic, namespace):
     """
     Args:
         received_topic (:obj:`str`): topic name
@@ -112,7 +124,7 @@ def spin_ros_node(received_topic, namespace):
     """
     rospy.init_node(received_topic.split('/')[-1])
 
-    close_blackboard_watcher_service_name = find_service(namespace, 'py_trees_msgs/CloseBlackboardWatcher')
+    close_blackboard_watcher_service_name = utilities.find_service(namespace, 'py_trees_msgs/CloseBlackboardWatcher')
 
     def request_close_blackboard_watcher(updates_subscriber):
         """
@@ -138,37 +150,10 @@ def spin_ros_node(received_topic, namespace):
         rospy.spin()
 
 
-def find_service(namespace, service_type):
-    try:
-        service_name = rosservice.rosservice_find(service_type)
-    except rosservice.ROSServiceIOException as e:
-        print(console.red + "ERROR: {0}".format(str(e)) + console.reset)
-        sys.exit(1)
-    if len(service_name) > 0:
-        if len(service_name) == 1:
-            service_name = service_name[0]
-        elif namespace is not None:
-            for service in service_name:
-                if namespace in service:
-                    service_name = service
-                    break
-            if type(service_name) is list:
-                print(console.red + "\nERROR: multiple blackboard services found %s" % service_name + console.reset)
-                print(console.red + "\nERROR: but none matching the requested '%s'" % namespace + console.reset)
-                sys.exit(1)
-        else:
-            print(console.red + "\nERROR: multiple blackboard services found %s" % service_name + console.reset)
-            print(console.red + "\nERROR: select one with the --namespace argument" + console.reset)
-            sys.exit(1)
-    else:
-        print(console.red + "ERROR: blackboard services not found" + console.reset)
-        sys.exit(1)
-    return service_name
-
-
 def handle_args(args):
+    args.namespace = utilities.discover_namespace(args.namespace)
     if args.list_variables:
-        list_variables_service_name = find_service(args.namespace, 'py_trees_msgs/GetBlackboardVariables')
+        list_variables_service_name = utilities.find_service(args.namespace, 'py_trees_msgs/GetBlackboardVariables')
         try:
             rospy.wait_for_service(list_variables_service_name, timeout=3.0)
             try:
@@ -183,14 +168,12 @@ def handle_args(args):
             sys.exit(1)
     else:
         if not args.variables:
-            print(console.red + "\nERROR: please provide a list of variables to watch.\n" + console.reset)
-            print("%s" % description(formatted_for_sphinx=False))
-            sys.exit(1)
+            watch_blackboard(args.namespace)
         else:
             variables = args.variables[0:]
             variables = [variable.strip(',[]') for variable in variables]
 
-            open_blackboard_watcher_service = find_service(args.namespace, 'py_trees_msgs/OpenBlackboardWatcher')
+            open_blackboard_watcher_service = utilities.find_service(args.namespace, 'py_trees_msgs/OpenBlackboardWatcher')
 
             try:
                 rospy.wait_for_service(open_blackboard_watcher_service, timeout=3.0)
@@ -202,7 +185,7 @@ def handle_args(args):
                     sys.exit(1)
 
                 if response is not None:
-                    spin_ros_node(response.topic, args.namespace)
+                    watch_sub_blackboard(response.topic, args.namespace)
 
                 else:
                     print(console.red + "\nERROR: subscribing to topic failed\n" + console.reset)
