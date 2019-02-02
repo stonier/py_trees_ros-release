@@ -111,8 +111,7 @@ class Scan(object):
             name="UnDock",
             action_namespace="/dock",
             action_spec=py_trees_msgs.DockAction,
-            action_goal=py_trees_msgs.DockGoal(False),
-            override_feedback_message_on_running="undocking"
+            action_goal=py_trees_msgs.DockGoal(False)
         )
         scan_or_be_cancelled = py_trees.composites.Selector("Scan or Be Cancelled")
         cancelling = py_trees.composites.Sequence("Cancelling?")
@@ -136,13 +135,11 @@ class Scan(object):
         )
         scanning = py_trees.composites.Parallel(name="Scanning", policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         scan_context_switch = py_trees_ros.tutorials.behaviours.ScanContext("Context Switch")
-        rospy.logwarn("Setting up rotating")
         scan_rotate = py_trees_ros.actions.ActionClient(
             name="Rotate",
             action_namespace="/rotate",
             action_spec=py_trees_msgs.RotateAction,
-            action_goal=py_trees_msgs.RotateGoal(),
-            override_feedback_message_on_running="rotating"
+            action_goal=py_trees_msgs.RotateGoal()
         )
         scan_flash_blue = py_trees_ros.tutorials.behaviours.FlashLedStrip(name="Flash Blue", colour="blue")
         move_home_after_scan = py_trees_ros.actions.ActionClient(
@@ -158,8 +155,7 @@ class Scan(object):
             name="Dock",
             action_namespace="/dock",
             action_spec=py_trees_msgs.DockAction,
-            action_goal=py_trees_msgs.DockGoal(True),
-            override_feedback_message_on_running="docking"
+            action_goal=py_trees_msgs.DockGoal(True)
         )
         # Subtree
         root.add_children([ere_we_go, die])
