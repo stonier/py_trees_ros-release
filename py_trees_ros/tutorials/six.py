@@ -144,8 +144,7 @@ def create_root():
         name="Rotate",
         action_namespace="/rotate",
         action_spec=py_trees_msgs.RotateAction,
-        action_goal=py_trees_msgs.RotateGoal(),
-        override_feedback_message_on_running="rotating"
+        action_goal=py_trees_msgs.RotateGoal()
     )
     scan_flash_blue = py_trees_ros.tutorials.behaviours.FlashLedStrip(name="Flash Blue", colour="blue")
     scan_celebrate = py_trees.composites.Parallel(name="Celebrate", policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
