@@ -1,18 +1,26 @@
 #
 # License: BSD
-#   https://raw.githubusercontent.com/splintered-reality/py_trees/devel/LICENSE
+#   https://raw.github.com/splintered-reality/py_trees_ros/license/LICENSE
 #
 ##############################################################################
 # Documentation
 ##############################################################################
 
 """
-Version number provided separately here so there is easy access for the module,
-setup.py and sphinx.
+Entry points to the tutorials
 """
 
 ##############################################################################
-# Version
+# Imports
 ##############################################################################
 
-__version__ = '1.1.0'
+# from . import behaviours
+# from . import qt
+# from . import jobs
+
+from . import one
+# from . import two
+# from . import five
+# from . import six
+# from . import seven
+# from . import eight

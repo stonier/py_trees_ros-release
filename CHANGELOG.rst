@@ -2,22 +2,32 @@
 Changelog
 =========
 
-0.5.18 (2019-03-23)
--------------------
-* [infra] merge kinetic and melodic release branches
+Forthcoming
+-----------
+* ...
 
-0.5.17 (2019-02-20)
--------------------
-* [actions] remove redundant prints in the action behaviour
+1.1.0 (2019-06-19)
+------------------
 
-0.5.16 (2019-02-02)
--------------------
-* [trees] added serialisation to Decorator
+* [actions] bugfix action client, don't cancel if not RUNNING
+* [conversions] bugfix msg_to_behaviour for decorators
+* [watchers] bugfix tree-watchers dot-graph to string functionality
+* [watchers] bugfix missing tip in deserialised tree-watcher tree
 
-0.5.15 (2019-02-02)
--------------------
-* [programs] blackboard-watcher can operate on the entire blackboard
-* [programs] tree-watcher added
+1.0.0 (2019-04-28)
+------------------
+
+Stripped down and rebuilt for ROS2:
+
+* [behaviours] the familiar subscriber and action client behaviours
+* [blackboard] the exchange, mostly unmodified
+* [infra] colcon build environment
+* [trees] simpler communications, just one serialised tree snapshot, watchers do the rest
+* [watchers] revamped 'blackboard' and new 'tree' watcher
+
+What's missing:
+
+* [logging] the basic mechanisms have moved to py_trees, the rosbag implementation is to come
 
 0.5.13 (2017-05-28)
 -------------------

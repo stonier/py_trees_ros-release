@@ -15,7 +15,7 @@ py_trees_ros.actions
 .. automodule:: py_trees_ros.actions
     :members:
     :show-inheritance:
-    :synopsis: behaviours that work with action servers/clients
+    :synopsis: action server/client behaviours
 
 py_trees_ros.battery
 --------------------
@@ -40,14 +40,6 @@ py_trees_ros.conversions
     :members:
     :show-inheritance:
     :synopsis: py_trees - ros messages conversion library
-
-py_trees_ros.exceptions
------------------------
-
-.. automodule:: py_trees_ros.exceptions
-    :members:
-    :show-inheritance:
-    :synopsis: custom exceptions for py_trees_ros
 
 py_trees_ros.subscribers
 ------------------------
@@ -80,27 +72,3 @@ py_trees_ros.visitors
     :members:
     :show-inheritance:
     :synopsis: entities that visit behaviours as a tree is traversed
-
-py_trees_ros.programs
----------------------
-
-.. automodule:: py_trees_ros.programs
-   :synopsis: command line utilities for py_trees_ros
-
-py_trees_ros.programs.blackboard_watcher
-----------------------------------------
-
-.. automodule:: py_trees_ros.programs.blackboard_watcher
-    :members:
-    :special-members:
-    :show-inheritance:
-    :synopsis: command line blackboard watcher
-
-py_trees_ros.programs.tree_watcher
-----------------------------------
-
-.. automodule:: py_trees_ros.programs.tree_watcher
-    :members:
-    :special-members:
-    :show-inheritance:
-    :synopsis: command line tree watcher

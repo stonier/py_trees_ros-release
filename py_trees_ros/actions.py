@@ -1,24 +1,28 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 #
 # License: BSD
-#   https://raw.github.com/stonier/py_trees_ros/license/LICENSE
+#   https://raw.github.com/splintered-reality/py_trees_ros/license/LICENSE
 #
 ##############################################################################
 # Documentation
 ##############################################################################
 
 """
-Various instantiable templates for action client/server style behaviours.
+Behaviours for ROS actions.
 """
 
 ##############################################################################
 # Imports
 ##############################################################################
 
-import actionlib
+import action_msgs.msg as action_msgs  # GoalStatus
 import py_trees
-import rospy
-import actionlib_msgs.msg as actionlib_msgs
+import rclpy.action
+
+from typing import Any, Callable
+
+from . import exceptions
 
 ##############################################################################
 # Behaviours
@@ -30,101 +34,255 @@ class ActionClient(py_trees.behaviour.Behaviour):
     A generic action client interface. This simply sends a pre-configured
     goal to the action client.
 
-    Cases where you might want to subclass and extend this behaviour:
-
-    * Update the goal data in :meth:`~py_trees_ros.actions.ActionClient.initialise()`
-
-      * e.g. use blackboard data to determine the new characteristics of your goal
-    * Trigger true pre-emption by sending a new goal in :meth:`~py_trees_ros.actions.ActionClient.update()`
-
     Args:
-        name (:obj:`str`): name of the behaviour
-        action_spec (:obj:`any`): spec type for the action (e.g. move_base_msgs.msg.MoveBaseAction)
-        action_goal (:obj:`any`): preconfigured action goal (e.g. move_base_msgs.msg.MoveBaseGoal())
-        action_namespace (:obj:`str`): where you can find the action topics
-        override_feedback_message_on_running (:obj:`str`): override the feedback message from the server
-
-    Feedback messages are often accompanied with detailed messages that continuously change - since these
-    are not significant and we don't want to log every change due to these messages, you can provide an override
-    here that simply signifies the action is running.
-
-    @todo: a more comprehensive way of filtering/parsing feedback messages to customise a running state so
-    that it can identify and react to 'significant' events while running.
+        action_type: spec type for the action (e.g. move_base_msgs.action.MoveBase)
+        action_name: where you can find the action topics & services (e.g. "bob/move_base")
+        action_goal: pre-configured action goal (e.g. move_base_msgs.action.MoveBaseGoal())
+        name: name of the behaviour (default: lowercase class name)
+        generate_feedback_message: formatter for feedback messages, takes action_type.Feedback
+            messages and returns strings (default: None)
     """
-    def __init__(self, name="Action Client", action_spec=None, action_goal=None, action_namespace="/action",
-                 override_feedback_message_on_running="moving"):
-        super(ActionClient, self).__init__(name)
-        self.action_client = None
-        self.sent_goal = False
-        self.action_spec = action_spec
+    def __init__(self,
+                 action_type: Any,
+                 action_name: str,
+                 action_goal: Any,
+                 name: str=py_trees.common.Name.AUTO_GENERATED,
+                 generate_feedback_message: Callable[[Any], str]=None,
+                 ):
+        super().__init__(name)
+        self.action_type = action_type
+        self.action_name = action_name
         self.action_goal = action_goal
-        self.action_namespace = action_namespace
-        self.override_feedback_message_on_running = override_feedback_message_on_running
+        self.generate_feedback_message = generate_feedback_message
 
-    def setup(self, timeout):
+        self.node = None
+        self.action_client = None
+
+        self.status_strings = {
+                action_msgs.GoalStatus.STATUS_UNKNOWN : "STATUS_UNKNOWN",  # noqa
+                action_msgs.GoalStatus.STATUS_ACCEPTED : "STATUS_ACCEPTED",  # noqa
+                action_msgs.GoalStatus.STATUS_EXECUTING: "STATUS_EXECUTING",  # noqa
+                action_msgs.GoalStatus.STATUS_CANCELING: "STATUS_CANCELING",  # noqa
+                action_msgs.GoalStatus.STATUS_SUCCEEDED: "STATUS_SUCCEEDED",  # noqa
+                action_msgs.GoalStatus.STATUS_CANCELED : "STATUS_CANCELED",  # noqa
+                action_msgs.GoalStatus.STATUS_ABORTED  : "STATUS_ABORTED"  # noqa
+            }
+
+    def setup(self, **kwargs):
         """
+        Setup the action client services and subscribers.
+
         Args:
-            timeout (:obj:`float`): time to wait (0.0 is blocking forever)
+            **kwargs (:obj:`dict`): distribute arguments to this
+               behaviour and in turn, all of it's children
 
-        Returns:
-            :obj:`bool`: whether it timed out trying to setup
+        Raises:
+            :class:`KeyError`: if a ros2 node isn't passed under the key 'node' in kwargs
+            :class:`~py_trees_ros.exceptions.TimedOutError`: if the action server could not be found
         """
-        self.logger.debug("%s.setup()" % self.__class__.__name__)
-        self.action_client = actionlib.SimpleActionClient(
-            self.action_namespace,
-            self.action_spec
+        self.logger.debug("{}.setup()".format(self.qualified_name))
+        try:
+            self.node = kwargs['node']
+        except KeyError as e:
+            error_message = "didn't find 'node' in setup's kwargs [{}][{}]".format(self.qualified_name)
+            raise KeyError(error_message) from e  # 'direct cause' traceability
+
+        self.action_client = rclpy.action.ActionClient(
+            node=self.node,
+            action_type=self.action_type,
+            action_name=self.action_name
         )
-        if not self.action_client.wait_for_server(rospy.Duration(timeout)):
-            self.logger.error("{0}.setup() could not connect to the rotate action server at '{1}'".format(self.__class__.__name__, self.action_namespace))
-            self.action_client = None
-            return False
-        return True
+        self.node.get_logger().info(
+            "waiting for server ... [{}][{}]".format(
+                self.action_name, self.qualified_name
+            )
+        )
+        result = self.action_client.wait_for_server(timeout_sec=2.0)
+        if not result:
+            self.feedback_message = "timed out waiting for the server [{}]".format(self.action_name)
+            self.node.get_logger().error("{}[{}]".format(self.feedback_message, self.qualified_name))
+            raise exceptions.TimedOutError(self.feedback_message)
+        else:
+            self.feedback_message = "... connected to action server [{}]".format(self.action_name)
+            self.node.get_logger().info("{}[{}]".format(self.feedback_message, self.qualified_name))
 
     def initialise(self):
         """
-        Reset the internal variables.
+        Reset the internal variables and kick off a new goal request.
         """
-        self.logger.debug("{0}.initialise()".format(self.__class__.__name__))
-        self.sent_goal = False
+        self.logger.debug("{}.initialise()".format(self.qualified_name))
+
+        # initialise some temporary variables
+        self.goal_handle = None
+        self.send_goal_future = None
+        self.get_result_future = None
+
+        self.result_message = None
+        self.result_status = None
+        self.result_status_string = None
+
+        self.feedback_message = "sent goal request"
+        self.send_goal_request()
 
     def update(self):
         """
         Check only to see whether the underlying action server has
         succeeded, is running, or has cancelled/aborted for some reason and
         map these to the usual behaviour return states.
-        """
-        self.logger.debug("{0}.update()".format(self.__class__.__name__))
-        if not self.action_client:
-            self.feedback_message = "no action client, did you call setup() on your tree?"
-            return py_trees.Status.INVALID
-        # pity there is no 'is_connected' api like there is for c++
-        if not self.sent_goal:
-            self.action_client.send_goal(self.action_goal)
-            self.sent_goal = True
-            self.feedback_message = "sent goal to the action server"
-            return py_trees.Status.RUNNING
-        self.feedback_message = self.action_client.get_goal_status_text()
-        if self.action_client.get_state() in [actionlib_msgs.GoalStatus.ABORTED,
-                                              actionlib_msgs.GoalStatus.PREEMPTED]:
-            return py_trees.Status.FAILURE
-        result = self.action_client.get_result()
-        if result:
-            return py_trees.Status.SUCCESS
-        else:
-            self.feedback_message = self.override_feedback_message_on_running
-            return py_trees.Status.RUNNING
 
-    def terminate(self, new_status):
+        Returns:
+            :class:`py_trees.common.Status`
+        """
+        self.logger.debug("{}.update()".format(self.qualified_name))
+
+        if self.goal_handle is not None and not self.goal_handle.accepted:
+            # goal was rejected
+            self.feedback_message = "goal rejected"
+            return py_trees.common.Status.FAILURE
+        if self.result_status is None:
+            return py_trees.common.Status.RUNNING
+        elif not self.get_result_future.done():
+            # should never get here
+            self.node.get_logger().warn("got result, but future not yet done [{}]".format(self.qualified_name))
+            return py_trees.common.Status.RUNNING
+        else:
+            self.node.get_logger().info("goal result [{}]".format(self.qualified_name))
+            self.node.get_logger().info("  status: {}".format(self.result_status_string))
+            self.node.get_logger().info("  message: {}".format(self.result_message))
+            if self.result_status == action_msgs.GoalStatus.STATUS_SUCCEEDED:  # noqa
+                self.feedback_message = "successfully completed"
+                return py_trees.common.Status.SUCCESS
+            else:
+                self.feedback_message = "failed"
+                return py_trees.common.Status.FAILURE
+
+    def terminate(self, new_status: py_trees.common.Status):
         """
         If running and the current goal has not already succeeded, cancel it.
 
         Args:
-            new_status (:class:`~py_trees.common.Status`): the behaviour is transitioning to this new status
+            new_status: the behaviour is transitioning to this new status
         """
-        self.logger.debug("%s.terminate(%s)" % (self.__class__.__name__, "%s->%s" % (self.status, new_status) if self.status != new_status else "%s" % new_status))
-        if self.action_client is not None and self.sent_goal:
-            motion_state = self.action_client.get_state()
-            if ((motion_state == actionlib_msgs.GoalStatus.PENDING) or (motion_state == actionlib_msgs.GoalStatus.ACTIVE) or
-               (motion_state == actionlib_msgs.GoalStatus.PREEMPTING) or (motion_state == actionlib_msgs.GoalStatus.RECALLING)):
-                self.action_client.cancel_goal()
-        self.sent_goal = False
+        self.logger.debug(
+            "{}.terminate({})".format(
+                self.qualified_name,
+                "{}->{}".format(self.status, new_status) if self.status != new_status else "{}".format(new_status)
+            )
+        )
+        if (
+            self.status == py_trees.common.Status.RUNNING
+            and new_status == py_trees.common.Status.INVALID
+        ):
+            self.send_cancel_request()
+
+    def shutdown(self):
+        """
+        Clean up the action client when shutting down.
+        """
+        self.action_client.destroy()
+
+    ########################################
+    # Action Client Methods
+    ########################################
+    def feedback_callback(self, msg: Any):
+        """
+        Default generator for feedback messages from the action server. This will
+        update the behaviour's feedback message with a stringified version of the
+        incoming feedback message.
+
+        Args:
+            msg: incoming feedback message (e.g. move_base_msgs.action.MoveBaseFeedback)
+        """
+        if self.generate_feedback_message is not None:
+            self.feedback_message = "feedback: {}".format(self.generate_feedback_message(msg))
+            self.node.get_logger().info(
+                '{} [{}]'.format(
+                    self.feedback_message,
+                    self.qualified_name
+                )
+            )
+
+    def send_goal_request(self):
+        """
+        Send the goal, get a future back and start lining up the
+        chain of callbacks that will lead to a result.
+        """
+        self.feedback_message = "sending goal ..."
+        self.node.get_logger().info("{} [{}]".format(
+                self.feedback_message,
+                self.qualified_name
+            )
+        )
+        self.send_goal_future = self.action_client.send_goal_async(
+                self.action_goal,
+                feedback_callback=self.feedback_callback,
+                # A random uuid is always generated, since we're not sending more than one
+                # at a time, we don't need to generate and track them here
+                # goal_uuid=unique_identifier_msgs.UUID(uuid=list(uuid.uuid4().bytes))
+        )
+        self.send_goal_future.add_done_callback(self.goal_response_callback)
+
+    def goal_response_callback(self, future: rclpy.task.Future):
+        """
+        Handle goal response, proceed to listen for the result if accepted.
+
+        Args:
+            future: incoming goal request result delivered from the action server
+        """
+        if future.result() is None:
+            self.feedback_message = "goal request failed :[ [{}]\n{!r}".format(self.qualified_name, future.exception())
+            self.node.get_logger().info('... {}'.format(self.feedback_message))
+            return
+        self.goal_handle = future.result()
+        if not self.goal_handle.accepted:
+            self.feedback_message = "goal rejected :( [{}]".format(self.qualified_name)
+            self.node.get_logger().info('... {}'.format(self.feedback_message))
+            return
+        else:
+            self.feedback_message = "goal accepted :) [{}]".format(self.qualified_name)
+            self.node.get_logger().info("... {}".format(self.feedback_message))
+            self.node.get_logger().debug("  {!s}".format(future.result()))
+
+        self.get_result_future = self.goal_handle.get_result_async()
+        self.get_result_future.add_done_callback(self.get_result_callback)
+
+    def send_cancel_request(self):
+        """
+        Send a cancel request to the server. This is triggered when the
+        behaviour's status switches from :attr:`~py_trees.common.Status.RUNNING` to
+        :attr:`~py_trees.common.Status.INVALID` (typically a result of a priority
+        interrupt).
+        """
+        self.feedback_message = "cancelling goal ... [{}]".format(self.qualified_name)
+        self.node.get_logger().info(self.feedback_message)
+
+        if self.goal_handle is not None:
+            future = self.goal_handle.cancel_goal_async()
+            future.add_done_callback(self.cancel_response_callback)
+
+    def cancel_response_callback(self, future: rclpy.task.Future):
+        """
+        Immediate callback for the result of a cancel request. This will
+        set the behaviour's feedback message accordingly.
+
+        Args:
+            future: incoming cancellation result delivered from the action server
+        """
+        cancel_response = future.result()
+        if len(cancel_response.goals_canceling) > 0:
+            self.feedback_message = "goal successfully cancelled [{}]".format(self.qualified_name)
+        else:
+            self.feedback_message = "goal failed to cancel [{}]".format(self.qualified_name)
+        self.node.get_logger().info('... {}'.format(self.feedback_message))
+
+    def get_result_callback(self, future: rclpy.task.Future):
+        """
+        Immediate callback for the result, saves data into local variables so that
+        the update method can react accordingly.
+
+        Args:
+            future: incoming goal result delivered from the action server
+        """
+        self.result_message = future.result()
+        self.result_status = future.result().status
+        self.result_status_string = self.status_strings[self.result_status]

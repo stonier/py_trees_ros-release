@@ -1,7 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 #
 # License: BSD
-#   https://raw.githubusercontent.com/stonier/py_trees/devel/LICENSE
+#   https://raw.githubusercontent.com/splintered-reality/py_trees/devel/LICENSE
 #
 ##############################################################################
 # Documentation
@@ -13,7 +14,13 @@
    :func: command_line_argument_parser
    :prog: py-trees-tree-watcher
 
-Interaction with the tree publishers.
+Command line utility to interact with a running
+:class:`~py_trees_ros.trees.BehaviourTree` instance. Print the tree structure
+or a live snapshot of the tree state as unicode art on your console,
+view tick statistics as a stream or display the tree as a dot graph.
+
+.. image:: images/tree-watcher.gif
+
 """
 
 ##############################################################################
@@ -21,13 +28,10 @@ Interaction with the tree publishers.
 ##############################################################################
 
 import argparse
-import functools
-import rospy
 import py_trees.console as console
+import py_trees_ros
+import rclpy
 import sys
-import std_msgs.msg as std_msgs
-
-from . import utilities
 
 ##############################################################################
 # Classes
@@ -35,13 +39,20 @@ from . import utilities
 
 
 def description(formatted_for_sphinx):
-    short = "Introspect the tree\n"
-    examples = ["--tree", "--snapshot", "--namespace my_tree --snapshot"]
+    short = "Open up a window onto the behaviour tree!\n"
+    long = ("\nPrint a single snapshot, or stream the tree state as unicode art on your console\n"
+            "or render the tree as a dot graph (does not include behaviour's status flags).\n"
+            "Use the namespace argument to select from trees when there are multiple available.\n"
+            )
+    examples = [
+        "", "--stream", "--snapshot", "--dot-graph", "--namespace=foo --stream"
+    ]
     script_name = "py-trees-tree-watcher"
 
     if formatted_for_sphinx:
         # for sphinx documentation (doesn't like raw text)
         s = short
+        s += long
         s += "\n"
         s += "**Examples:**\n\n"
         s += ".. code-block:: bash\n"
@@ -56,6 +67,7 @@ def description(formatted_for_sphinx):
         s += banner_line
         s += "\n"
         s += short
+        s += long
         s += "\n"
         s += console.bold + "Examples" + console.reset + "\n\n"
         s += '\n'.join(["    $ " + console.cyan + script_name + console.yellow + " {0}".format(example_args) + console.reset for example_args in examples])
@@ -78,10 +90,26 @@ def command_line_argument_parser(formatted_for_sphinx=True):
                                      epilog=epilog(formatted_for_sphinx),
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      )
+    parser.add_argument('-n', '--namespace', nargs='?', default=None, help='namespace of pytree communications (if there should be more than one tree active)')
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('-t', '--tree', action='store_true', default=None, help='display the entire tree (no running information)')
-    group.add_argument('-s', '--snapshot', action='store_true', default=None, help='display the visited state of the tree')
-    parser.add_argument('-n', '--namespace', nargs='?', default=None, help='namespace of tree services (if there should be more than one)')
+    group.add_argument(
+        '--stream',
+        dest='viewing_mode',
+        action='store_const',
+        const=py_trees_ros.trees.WatcherMode.STREAM,
+        help='stream the tree state as unicode art on your console')
+    group.add_argument(
+        '-s', '--snapshot',
+        dest='viewing_mode',
+        action='store_const',
+        const=py_trees_ros.trees.WatcherMode.SNAPSHOT,
+        help='print a single snapshot as unicode art on your console')
+    group.add_argument(
+        '-d', '--dot-graph',
+        dest='viewing_mode',
+        action='store_const',
+        const=py_trees_ros.trees.WatcherMode.DOT_GRAPH,
+        help='render the tree as a dot graph')
     return parser
 
 
@@ -96,37 +124,23 @@ def pretty_print_variables(variables):
             sep = ""
         s += "    " * len(variable) + sep + variable[-1] + "\n"
     s += console.reset
-    print "%s" % s
+    print("{}".format(s))
 
 
-def echo_tree(msg, abort_after_one_message):
-    # TODO: have the tree publish yaml/json/pickled data
-    # and do the pretty printing here
-    print "%s" % msg.data
-    if abort_after_one_message:
-        rospy.signal_shutdown("")
+def echo_blackboard_contents(contents):
+    """
+    Args:
+        contents (:obj:`str`): blackboard contents
 
+    .. note::
+        The string comes pre-formatted with bash color identifiers and newlines.
+        This is currently not especially good for anything other than debugging.
+    """
+    print("{}".format(contents))
 
-def watch_tree(fully_resolved_topic_name, abort_after_one_message):
-    rospy.init_node("tree_watcher", anonymous=True)
-    # TODO: this will fall over if anyone actually remaps the blackboard name
-    # Solution 1: command line argument (pushes the work to the user)
-    # Solution 2: have a unique type for the blackboard (not std_msgs/String), look it up
-    rospy.Subscriber(fully_resolved_topic_name, std_msgs.String,
-                     functools.partial(echo_tree,
-                                       abort_after_one_message=abort_after_one_message))
-    while not rospy.is_shutdown():
-        rospy.spin()
-
-
-def handle_args(args):
-    args.namespace = utilities.discover_namespace(args.namespace)
-    # TODO: will completely fall apart if 'ascii', 'tree', or 'snapshot' are remapped
-    # SOLN: create specific message types for each
-    if args.tree:
-        watch_tree(args.namespace + "/ascii/tree", abort_after_one_message=True)
-    else:
-        watch_tree(args.namespace + "/ascii/snapshot", abort_after_one_message=False)
+##############################################################################
+# Tree Watcher
+##############################################################################
 
 ##############################################################################
 # Main
@@ -135,9 +149,58 @@ def handle_args(args):
 
 def main():
     """
-    Entry point for the blackboard watcher script.
+    Entry point for the tree watcher script.
     """
-    command_line_args = rospy.myargv(argv=sys.argv)[1:]
+    ####################
+    # Arg Parsing
+    ####################
+    # Until there is support for a ros arg stripper
+    # command_line_args = rospy.myargv(argv=sys.argv)[1:]
+    command_line_args = None
     parser = command_line_argument_parser(formatted_for_sphinx=False)
     args = parser.parse_args(command_line_args)
-    handle_args(args)
+    if not args.viewing_mode:
+        args.viewing_mode = py_trees_ros.trees.WatcherMode.STREAM
+
+    ####################
+    # Setup
+    ####################
+    tree_watcher = py_trees_ros.trees.Watcher(
+        namespace_hint=args.namespace,
+        mode=args.viewing_mode
+    )
+    rclpy.init(args=None)
+    try:
+        tree_watcher.setup()
+    except py_trees_ros.exceptions.NotFoundError as e:
+        print(console.red + "\nERROR: {}\n".format(str(e)) + console.reset)
+        sys.exit(1)
+    except py_trees_ros.exceptions.MultipleFoundError as e:
+        print(console.red + "\nERROR: {}\n".format(str(e)) + console.reset)
+        if args.namespace is None:
+            print(console.red + "\nERROR: select one with the --namespace argument\n" + console.reset)
+            sys.exit(1)
+        else:
+            print(console.red + "\nERROR: but none matching the requested '%s'\n" % args.namespace + console.reset)
+            sys.exit(1)
+
+    ####################
+    # Execute
+    ####################
+    try:
+        while True:
+            if not rclpy.ok():
+                break
+            if tree_watcher.done:
+                if tree_watcher.xdot_process is None:
+                    break
+                elif tree_watcher.xdot_process.poll() is not None:
+                    break
+            rclpy.spin_once(tree_watcher.node, timeout_sec=0.1)
+    except KeyboardInterrupt:
+        pass
+    if tree_watcher.xdot_process is not None:
+        if tree_watcher.xdot_process.poll() is not None:
+            tree_watcher.xdot_process.terminate()
+    tree_watcher.node.destroy_node()
+    rclpy.shutdown()
