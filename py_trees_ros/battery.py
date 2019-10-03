@@ -17,6 +17,7 @@ Getting the most out of your battery.
 ##############################################################################
 
 import py_trees
+import rclpy.qos
 import sensor_msgs.msg as sensor_msgs
 
 from . import subscribers
@@ -41,21 +42,24 @@ class ToBlackboard(subscribers.ToBlackboard):
         * battery_low_warning (:obj:`bool`)[w]: False if battery is ok, True if critically low
 
     Args:
-        name: name of the behaviour
         topic_name: name of the battery state topic
+        qos_profile: qos profile for the subscriber
+        name: name of the behaviour
         threshold: percentage level threshold for flagging as low (0-100)
     """
     def __init__(self,
+                 topic_name: str,
+                 qos_profile: rclpy.qos.QoSProfile,
                  name: str=py_trees.common.Name.AUTO_GENERATED,
-                 topic_name: str="/battery/state",
                  threshold: float=30.0):
         super().__init__(name=name,
                          topic_name=topic_name,
                          topic_type=sensor_msgs.BatteryState,
+                         qos_profile=qos_profile,
                          blackboard_variables={"battery": None},
                          clearing_policy=py_trees.common.ClearingPolicy.NEVER
                          )
-        self.blackboard = py_trees.blackboard.Blackboard()
+        self.blackboard.register_key(key="battery_low_warning", write=True)
         self.blackboard.battery = sensor_msgs.BatteryState()
         self.blackboard.battery.percentage = 0.0
         self.blackboard.battery.power_supply_status = sensor_msgs.BatteryState.POWER_SUPPLY_STATUS_UNKNOWN  # noqa

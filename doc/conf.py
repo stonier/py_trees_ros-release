@@ -46,9 +46,9 @@ copyright = u'2019, Daniel Stonier'
 # built documents.
 #
 # The short X.Y version.
-version = "1.1"
+version = "1.2"
 # The full version, including alpha/beta/rc tags.
-release = "1.1.2"
+release = "1.2.0"
 
 ##############################################################################
 # Regular Sphinx Configuration
@@ -90,8 +90,8 @@ htmlhelp_basename = 'py_trees_ros_doc'
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'py_trees.tex', u'py\\_trees Documentation',
-   u'Daniel Stonier', 'manual'),
+    ('index', 'py_trees.tex', u'py\\_trees Documentation',
+     u'Daniel Stonier', 'manual'),
 ]
 
 # -- Options for manual page output ---------------------------------------
@@ -163,8 +163,10 @@ todo_include_todos = True
 
 MOCK_MODULES = [
     'action_msgs', 'action_msgs.msg',
+    'diagnostic_msgs', 'diagnostic_msgs.msg',
     'py_trees_ros_interfaces', 'py_trees_ros_interfaces.action',
     'py_trees_ros_interfaces.msg', 'py_trees_ros_interfaces.srv',
+    'rcl_interfaces', 'rcl_interfaces.msg',
     'rclpy', 'rclpy.action', 'rclpy.callback_groups', 'rclpy.executors',
     'rclpy.expand_topic_name', 'rclpy.node', 'rclpy.parameter',
     'rclpy.qos', 'rclpy.time',
