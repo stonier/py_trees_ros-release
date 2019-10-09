@@ -1,3 +1,26 @@
+## py_trees_ros (dashing) - 1.2.1-1
+
+The packages in the `py_trees_ros` repository were released into the `dashing` distro by running `/usr/bin/bloom-release --track dashing --rosdistro dashing py_trees_ros` on `Wed, 09 Oct 2019 01:07:44 -0000`
+
+The `py_trees_ros` package was released.
+
+Version of package(s) in repository `py_trees_ros`:
+
+- upstream repository: https://github.com/splintered-reality/py_trees_ros.git
+- release repository: https://github.com/stonier/py_trees_ros-release.git
+- rosdistro version: `1.2.0-1`
+- old version: `1.2.0-1`
+- new version: `1.2.1-1`
+
+Versions of tools used:
+
+- bloom version: `0.8.0`
+- catkin_pkg version: `0.4.13`
+- rosdep version: `0.15.2`
+- rosdistro version: `0.7.4`
+- vcstools version: `0.1.42`
+
+
 ## py_trees_ros (dashing) - 1.2.0-1
 
 The packages in the `py_trees_ros` repository were released into the `dashing` distro by running `/usr/bin/bloom-release --edit-track --track dashing --rosdistro dashing py_trees_ros` on `Thu, 03 Oct 2019 21:51:33 -0000`
