@@ -1,3 +1,26 @@
+## py_trees_ros (eloquent) - 1.2.1-1
+
+The packages in the `py_trees_ros` repository were released into the `eloquent` distro by running `/usr/bin/bloom-release --edit-track --track eloquent --rosdistro eloquent py_trees_ros` on `Sun, 13 Oct 2019 16:10:37 -0000`
+
+The `py_trees_ros` package was released.
+
+Version of package(s) in repository `py_trees_ros`:
+
+- upstream repository: https://github.com/splintered-reality/py_trees_ros.git
+- release repository: unknown
+- rosdistro version: `null`
+- old version: `null`
+- new version: `1.2.1-1`
+
+Versions of tools used:
+
+- bloom version: `0.8.0`
+- catkin_pkg version: `0.4.10`
+- rosdep version: `0.15.0`
+- rosdistro version: `0.7.0`
+- vcstools version: `0.1.40`
+
+
 ## py_trees_ros (dashing) - 1.2.1-2
 
 The packages in the `py_trees_ros` repository were released into the `dashing` distro by running `/usr/bin/bloom-release --track dashing --rosdistro dashing py_trees_ros` on `Wed, 09 Oct 2019 05:09:02 -0000`
