@@ -46,9 +46,9 @@ copyright = u'2019, Daniel Stonier'
 # built documents.
 #
 # The short X.Y version.
-version = "1.2"
+version = "1.3"
 # The full version, including alpha/beta/rc tags.
-release = "1.2.1"
+release = "1.3.1"
 
 ##############################################################################
 # Regular Sphinx Configuration
@@ -164,6 +164,7 @@ todo_include_todos = True
 MOCK_MODULES = [
     'action_msgs', 'action_msgs.msg',
     'diagnostic_msgs', 'diagnostic_msgs.msg',
+    'geometry_msgs', 'geometry_msgs.msg',
     'py_trees_ros_interfaces', 'py_trees_ros_interfaces.action',
     'py_trees_ros_interfaces.msg', 'py_trees_ros_interfaces.srv',
     'rcl_interfaces', 'rcl_interfaces.msg',
@@ -174,6 +175,7 @@ MOCK_MODULES = [
     'ros2topic', 'ros2topic.api',
     'sensor_msgs', 'sensor_msgs.msg',
     'std_msgs', 'std_msgs.msg',
+    'tf2_ros',
     'unique_identifier_msgs', 'unique_identifier_msgs.msg'
 ]
 # sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
