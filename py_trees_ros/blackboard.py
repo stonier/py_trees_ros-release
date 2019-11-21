@@ -21,6 +21,8 @@ command line utility.
 # Imports
 ##############################################################################
 
+import copy
+import pickle
 import py_trees
 import py_trees.console as console
 import py_trees_ros_interfaces.srv as py_trees_srvs  # noqa
@@ -34,8 +36,77 @@ from . import exceptions
 from . import utilities
 
 ##############################################################################
-# SubView of a Blackboard
+# Blackboard Helpers
 ##############################################################################
+
+
+class SubBlackboard(object):
+    """
+    Dynamically track the entire blackboard or part thereof and
+    flag when there have been changes. Not really happy with this class
+    (pickle problems) nor it's name (misleading).
+    """
+    def __init__(self):
+        self.is_changed = False
+        self.variable_names = set()
+        self.pickled_storage = None
+
+    def update(self, variable_names: typing.Set[str]):
+        """
+        Check for changes to the blackboard scoped to the provided set of
+        variable names (may be nested, e.g. battery.percentage). Checks
+        the entire blackboard when variable_names is None.
+
+        Args:
+            variable_names: constrain the scope to track for changes
+        """
+        # TODO: can we pickle without doing a copy?
+        # TODO: can we use __repr__ as a means of not being prone to pickle
+        #       i.e. put the work back on the user
+        # TODO: catch exceptions thrown by bad pickles
+        # TODO: use a better structure in the blackboard (e.g. JSON) so
+        #       that this isn't brittle w.r.t. pickle failures
+        if variable_names is None:
+            storage = copy.deepcopy(py_trees.blackboard.Blackboard.storage)
+            self.variable_names = py_trees.blackboard.Blackboard.keys()
+        else:
+            storage = {}
+            for variable_name in variable_names:
+                try:
+                    storage[variable_name] = copy.deepcopy(
+                        py_trees.blackboard.Blackboard.get(variable_name)
+                    )
+                except KeyError:
+                    pass  # silently just ignore the request
+            self.variable_names = variable_names
+        pickled_storage = pickle.dumps(storage, -1)
+        self.is_changed = pickled_storage != self.pickled_storage
+        self.pickled_storage = pickled_storage
+
+    def __str__(self):
+        """
+        Convenient printed representation of the sub-blackboard that this
+        instance is currently tracking.
+        """
+        max_length = 0
+        indent = " " * 4
+        s = ""
+        for name in self.variable_names:
+            max_length = len(name) if len(name) > max_length else max_length
+        for name in sorted(self.variable_names):
+            try:
+                value = py_trees.blackboard.Blackboard.get(name)
+                lines = ("%s" % value).split('\n')
+                if len(lines) > 1:
+                    s += console.cyan + indent + '{0: <{1}}'.format(name, max_length + 1) + console.reset + ":\n"
+                    for line in lines:
+                        s += console.yellow + "    %s" % line + console.reset + "\n"
+                else:
+                    s += console.cyan + indent + '{0: <{1}}'.format(name, max_length + 1) + console.reset + ": " + console.yellow + "%s" % (value) + console.reset + "\n"
+            except KeyError:
+                value_string = "-"
+                s += console.cyan + indent + '{0: <{1}}'.format(name, max_length + 1) + console.reset + ": " + console.yellow + "%s" % (value_string) + console.reset + "\n"
+        return s.rstrip()  # get rid of the trailing newline...print will take care of adding a new line
 
 
 class BlackboardView(object):
@@ -60,7 +131,7 @@ class BlackboardView(object):
     ):
         self.topic_name = topic_name
         self.variable_names = variable_names
-        self.sub_blackboard = py_trees.blackboard.SubBlackboard()
+        self.sub_blackboard = SubBlackboard()
         self.sub_activity_stream = py_trees.blackboard.ActivityStream()
         self.node = node
         self.publisher = self.node.create_publisher(
@@ -228,8 +299,8 @@ class Exchange(object):
                             value = getattr(v, attr)
                             if not callable(value):
                                 if not attr.isupper():
-                                    variables.append(k + "/" + attr)
-                                    inner(value, k + "/" + attr)
+                                    variables.append(k + "." + attr)
+                                    inner(value, k + "." + attr)
 
         for key in sorted(py_trees.blackboard.Blackboard.storage):
             variables.append(key)
@@ -237,7 +308,7 @@ class Exchange(object):
 
         return variables
 
-    def post_tick_handler(self, visited_clients: typing.List[uuid.UUID]=None):
+    def post_tick_handler(self, visited_client_ids: typing.List[uuid.UUID]=None):
         """
         Update blackboard watcher views, publish changes and
         clear the activity stream. Publishing is lazy, depending
@@ -247,13 +318,13 @@ class Exchange(object):
         :class:`py_trees_ros.trees.BehaviourTree`) after each and every tick.
 
         Args:
-            visited_clients: behaviour/blackboard client unique identifiers
+            visited_client_ids: blackboard client unique identifiers
         """
         # update watcher views and publish
         if len(self.views) > 0:
             for view in self.views:
                 if self.node.count_subscribers(view.topic_name) > 0:
-                    if view.is_changed(visited_clients):  # update in here
+                    if view.is_changed(visited_client_ids):  # update in here
                         msg = std_msgs.String()
                         if view.with_activity_stream:
                             msg.data = console.green + "Blackboard Data\n" + console.reset

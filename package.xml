@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>py_trees_ros</name>
-  <version>1.2.1</version>
+  <version>1.3.1</version>
   <description>
     ROS2 extensions and behaviours for py_trees.
   </description>
@@ -21,25 +21,7 @@
 
   <build_depend>python3-setuptools</build_depend>
 
-  <!-- ach, autodoc is a beast, it shouldn't need these (there is a PR going in upstream for autodoc) -->
-  <!--
-  <doc_depend>actionlib</doc_depend>
-  <doc_depend>actionlib_msgs</doc_depend>
-  <doc_depend>dynamic_reconfigure</doc_depend>
-  <doc_depend>geometry_msgs</doc_depend>
-  <doc_depend>move_base_msgs</doc_depend>
-  <doc_depend>nav_msgs</doc_depend>
-  <doc_depend>python-catkin-pkg</doc_depend>
-  <doc_depend>python-rospkg</doc_depend>
-  <doc_depend>py_trees</doc_depend>
-  <doc_depend>py_trees_msgs</doc_depend>
-  <doc_depend>rosbag</doc_depend>
-  <doc_depend>rospy</doc_depend>
-  <doc_depend>sensor_msgs</doc_depend>
-  <doc_depend>std_msgs</doc_depend>
-  <doc_depend>unique_id</doc_depend>
-  <doc_depend>unique_identifier_msgs</doc_depend>
-  -->
+  <test_depend>python3-pytest</test_depend>
 
   <doc_depend>python3-sphinx</doc_depend>
   <doc_depend>python3-sphinx-argparse</doc_depend>
@@ -54,8 +36,12 @@
   <depend>std_msgs</depend>
   <depend>unique_identifier_msgs</depend>
 
-  <!-- behaviour dependencies -->
+  <!-- behaviour dependencies (subscribers, transforms, ...) -->
+  <depend>geometry_msgs</depend>
   <depend>sensor_msgs</depend>
+  <depend>tf2_ros</depend>  <!-- monitor this, might migrate to a python only package -->
+
+  <!-- testing dependencies -->
 
   <export>
     <build_type>ament_python</build_type>
