@@ -46,6 +46,7 @@ from . import blackboard
 from . import conversions
 from . import exceptions
 from . import utilities
+from . import visitors
 
 ##############################################################################
 # ROS Trees
@@ -57,27 +58,33 @@ class BehaviourTree(py_trees.trees.BehaviourTree):
     Extend the :class:`py_trees.trees.BehaviourTree` class with
     a few bells and whistles for ROS:
 
-    * ros publishers that serialises a snapshot of the tree for viewing/logging
-    * a blackboard exchange with introspection and watcher services
+    ROS Parameters:
+        * **setup_timeout**: time (s) to wait (default: :data:`math.inf`)
 
+          * if :data:`math.inf`, it will block indefinitely
+        * **snapshot_period**: time (s) between snapshots (default: 2.0s)
+
+          * if :data:`math.inf` it will only publish on tree status / graph changes
 
     ROS Publishers:
-        * **~/snapshots** (:class:`py_trees_msgs.msg.BehaviourTree`)
+        * **~/snapshots** (:class:`py_trees_interfaces.msg.BehaviourTree`)
+        * **~/blackboard/close_watcher** (:class:`py_trees_ros_interfaces.srv.CloselackboardWatcher`)
+        * **~/blackboard/get_variables** (:class:`py_trees_ros_interfaces.srv.GetBlackboardVariables`)
+        * **~/blackboard/open_watcher** (:class:`py_trees_ros_interfaces.srv.OpenBlackboardWatcher`)
 
-    .. seealso::
-        It also exposes publishers and services from the blackboard exchange
-        in it's private namespace. Refer to :class:`~py_trees_ros.blackboard.Exchange` for details.
+    Topics and services are not intended for direct use, but facilitate the operation of the
+    utilities :ref:`py-trees-tree-watcher` and :ref:`py-trees-blackboard-watcher`.
 
     Args:
-        root (:class:`~py_trees.behaviour.Behaviour`): root node of the tree
-        unicode_tree_debug (:obj:`bool`, optional): print to console the visited ascii tree after every tick
+        root: root node of the tree
+        unicode_tree_debug: print to console the visited ascii tree after every tick
 
     Raises:
         AssertionError: if incoming root variable is not the correct type
     """
     def __init__(self,
-                 root,
-                 unicode_tree_debug=False):
+                 root: py_trees.behaviour.Behaviour,
+                 unicode_tree_debug: bool=False):
         super(BehaviourTree, self).__init__(root)
         if unicode_tree_debug:
             self.snapshot_visitor = py_trees.visitors.DisplaySnapshotVisitor()
@@ -120,18 +127,27 @@ class BehaviourTree(py_trees.trees.BehaviourTree):
         # _cleanup must come last as it assumes the existence of the bag
         # TODO: rospy.on_shutdown(self._cleanup)
 
-    def setup(self, timeout: float=py_trees.common.Duration.INFINITE):
+    def setup(
+            self,
+            period: float=2.0,
+            timeout: float=py_trees.common.Duration.INFINITE,
+            visitor: py_trees.visitors.VisitorBase=None
+    ):
         """
         Setup the publishers, exechange and add ros-relevant pre/post tick handlers to the tree.
         Ultimately relays this call down to all the behaviours in the tree.
 
         Args:
+            period: time (s) between snapshots (use common.Duration.INFINITE to *only* publish on tree status/graph change)
             timeout: time (s) to wait (use common.Duration.INFINITE to block indefinitely)
+            visitor: runnable entities on each node after it's setup
 
-        ROS Params:
-            timeout: time (s) to wait (use common.Duration.INFINITE (math.inf) to block indefinitely)
+        .. note:
 
-        .. note: The timeout parameter takes precedence. If not set, the timeout arg will provide the initial value.
+           This method declares parameters for the snapshot_period and setup_timeout.
+           These parameters take precedence over the period and timeout args provided here.
+           If parameters are not configured at runtime, then the period and timeout args
+           provided here will inialise the declared parameters.
 
         Raises:
             rclpy.exceptions.NotInitializedException: rclpy not yet initialised
@@ -140,14 +156,37 @@ class BehaviourTree(py_trees.trees.BehaviourTree):
         # node creation - can raise rclpy.exceptions.NotInitializedException
         default_node_name = "tree"
         self.node = rclpy.create_node(node_name=default_node_name)
-        # timeout parameter:
-        #   if not initialised from, e.g. launch, then
-        #   use the arg provided timeout
+        if visitor is None:
+            visitor = visitors.SetupLogger(node=self.node)
+        ########################################
+        # Parameters - snapshot_preiod
+        ########################################
         self.node.declare_parameter(
-            name='setup_timeout_sec',
-            value=timeout if not py_trees.common.Duration.INFINITE else py_trees.common.Duration.INFINITE.value,
+            name='snapshot_period',
+            value=period if period != py_trees.common.Duration.INFINITE else py_trees.common.Duration.INFINITE.value,
             descriptor=rcl_interfaces_msgs.ParameterDescriptor(
-                name="setup_timeout_sec",
+                name="snapshot_period",
+                type=rcl_interfaces_msgs.ParameterType.PARAMETER_DOUBLE,  # noqa
+                description="time between snapshots",
+                additional_constraints="",
+                read_only=True,
+                floating_point_range=[rcl_interfaces_msgs.FloatingPointRange(
+                    from_value=0.0,
+                    to_value=py_trees.common.Duration.INFINITE.value)]
+            )
+        )
+        # Get the resulting timeout
+        self.snapshot_period = self.node.get_parameter("snapshot_period").value
+        self.last_snapshot_timestamp = time.monotonic()
+
+        ########################################
+        # Parameters - setup_timeout
+        ########################################
+        self.node.declare_parameter(
+            name='setup_timeout',
+            value=timeout if timeout != py_trees.common.Duration.INFINITE else py_trees.common.Duration.INFINITE.value,
+            descriptor=rcl_interfaces_msgs.ParameterDescriptor(
+                name="setup_timeout",
                 type=rcl_interfaces_msgs.ParameterType.PARAMETER_DOUBLE,  # noqa
                 description="timeout for ROS tree setup (node, pubs, subs, ...)",
                 additional_constraints="",
@@ -158,25 +197,34 @@ class BehaviourTree(py_trees.trees.BehaviourTree):
             )
         )
         # Get the resulting timeout
-        setup_timeout_sec = self.node.get_parameter("setup_timeout_sec").value
+        setup_timeout = self.node.get_parameter("setup_timeout").value
         # Ugly workaround to accomodate use of the enum (TODO: rewind this)
         #   Need to pass the enum for now (instead of just a float) in case
         #   there are behaviours out in the wild that apply logic around the
         #   use of the enum
-        if setup_timeout_sec == py_trees.common.Duration.INFINITE.value:
-            setup_timeout_sec = py_trees.common.Duration.INFINITE
+        if setup_timeout == py_trees.common.Duration.INFINITE.value:
+            setup_timeout = py_trees.common.Duration.INFINITE
 
+        ########################################
+        # ROS Comms
+        ########################################
         self._setup_publishers()
         self.blackboard_exchange = blackboard.Exchange()
         self.blackboard_exchange.setup(self.node)
-        self.post_tick_handlers.append(self._on_change_post_tick_handler)
+        self.post_tick_handlers.append(self._snapshots_post_tick_handler)
 
-        # share the tree's node with it's behaviours
+        ########################################
+        # Behaviours
+        ########################################
         try:
-            super().setup(setup_timeout_sec, node=self.node)
+            super().setup(
+                timeout=setup_timeout,
+                visitor=visitor,
+                node=self.node
+            )
         except RuntimeError as e:
-            if str(e) == "tree setup timed out":
-                raise exceptions.TimedOutError("tree setup timed out")
+            if str(e) == "tree setup interrupted or timed out":
+                raise exceptions.TimedOutError(str(e))
             else:
                 raise
 
@@ -190,7 +238,7 @@ class BehaviourTree(py_trees.trees.BehaviourTree):
         )
 
         # publish current state
-        self._publish_serialised_tree()
+        self._publish_serialised_tree(changed=True)
 
         # set a handler to publish future modifications whenever the tree is modified
         # (e.g. pruned). The tree_update_handler method is in the base class, set this
@@ -279,7 +327,7 @@ class BehaviourTree(py_trees.trees.BehaviourTree):
         if self.statistics is not None:
             rclpy_start_time = rclpy.clock.Clock().now()
             self.statistics.stamp = rclpy_start_time.to_msg()
-            self._publish_serialised_tree()
+            self._publish_serialised_tree(changed=True)
 
     def _statistics_pre_tick_handler(self, tree: py_trees.trees.BehaviourTree):
         """
@@ -335,7 +383,7 @@ class BehaviourTree(py_trees.trees.BehaviourTree):
         else:
             self.statistics.tick_duration_variance = 0.0
 
-    def _on_change_post_tick_handler(self, tree: py_trees.trees.BehaviourTree):
+    def _snapshots_post_tick_handler(self, tree: py_trees.trees.BehaviourTree):
         """
         Post-tick handler that checks for changes in the tree/blackboard as a result
         of it's last tick and publish updates on ROS topics.
@@ -351,28 +399,27 @@ class BehaviourTree(py_trees.trees.BehaviourTree):
             self.node.get_logger().error("the root behaviour failed to return a tip [cause: tree is in an INVALID state]")
             return
 
-        # if tree state changed, publish
-        if self.snapshot_visitor.changed:
-            self._publish_serialised_tree()
-            # with self.lock:
-            #     if not self._bag_closed:
-            #         # self.bag.write(self.publishers.log_tree.name, self.logging_visitor.tree)
-            #         pass
+        # serialise the snapshot if tree state/graph changed or it's just been a while...
+        current_timestamp = time.monotonic()
+        if self.snapshot_visitor.changed or ((current_timestamp - self.last_snapshot_timestamp) > self.snapshot_period):
+            self._publish_serialised_tree(changed=self.snapshot_visitor.changed)
+            self.last_snapshot_timestamp = current_timestamp
 
-        # check for blackboard watchers, update and publish if necessary, clear activity stream
+        # every tick publish on watchers, clear activity stream (note: not expensive as watchers by default aren't connected)
         self.blackboard_exchange.post_tick_handler(
             visited_client_ids=self.snapshot_visitor.visited_blackboard_client_ids  # .keys()
         )
 
-    def _publish_serialised_tree(self):
+    def _publish_serialised_tree(self, changed: bool=False):
         """"
         Args:
-            tree (:class:`~py_trees.trees_ros.BehaviourTree`): the behaviour tree that has just been ticked
+            changed: whether the tree status / graph changed or not
         """
         # Don't fuss over lazy publishing, tree changes should not occur with high
         # frequency and more importantly, it needs to be latched with the latest
         # snapshot in the case of it not changing for quite some time to come...
         tree_message = py_trees_msgs.BehaviourTree()
+        tree_message.changed = changed
         # tree
         for behaviour in self.root.iterate():
             msg = conversions.behaviour_to_msg(behaviour)
@@ -395,7 +442,9 @@ class BehaviourTree(py_trees.trees.BehaviourTree):
             )
 
         if py_trees.blackboard.Blackboard.activity_stream is not None:
-            tree_message.blackboard_activity_stream = py_trees.display.unicode_blackboard_activity_stream()
+            tree_message.blackboard_activity_stream = py_trees.display.unicode_blackboard_activity_stream(
+                show_title=False
+            )
         # other
         if self.statistics is not None:
             tree_message.statistics = self.statistics
@@ -555,7 +604,20 @@ class Watcher(object):
         # Streaming
         ####################
         if self.viewing_mode == WatcherMode.STREAM:
-            console.banner("Tick {}".format(msg.statistics.count))
+            if msg.changed:
+                colour = console.green
+            else:
+                colour = console.bold
+            ####################
+            # Banner
+            ####################
+            title = "Tick {}".format(msg.statistics.count)
+            print(colour + "\n" + 80 * "*" + console.reset)
+            print(colour + "* " + console.bold + title.center(80) + console.reset)
+            print(colour + 80 * "*" + "\n" + console.reset)
+            ####################
+            # Tree Snapshot
+            ####################
             print(
                 py_trees.display.unicode_tree(
                     root=root,
@@ -563,13 +625,13 @@ class Watcher(object):
                     previously_visited=self.snapshot_visitor.previously_visited
                 )
             )
-            print(console.green + "-" * 80 + console.reset)
+            print(colour + "-" * 80 + console.reset)
             ####################
             # Stream Variables
             ####################
             if self.display_blackboard_variables:
                 print("")
-                print(console.green + "Blackboard Data" + console.reset)
+                print(colour + "Blackboard Data" + console.reset)
                 # could probably re-use the unicode_blackboard by passing a dict to it
                 # like we've done for the activity stream
                 indent = " " * 4
@@ -587,6 +649,7 @@ class Watcher(object):
             ####################
             if self.display_blackboard_activity:
                 print("")
+                print(colour + "Blackboard Activity Stream" + console.reset)
                 if msg.blackboard_activity_stream:
                     print(msg.blackboard_activity_stream)
             ####################
@@ -594,7 +657,7 @@ class Watcher(object):
             ####################
             if self.display_statistics:
                 print("")
-                print(console.green + "Statistics" + console.reset)
+                print(colour + "Statistics" + console.reset)
                 print(
                     console.cyan + "    Timestamp: " + console.yellow +
                     "{}".format(
@@ -621,6 +684,7 @@ class Watcher(object):
                         math.sqrt(msg.statistics.tick_interval_variance)
                     )
                 )
+                print(console.reset)
 
         ####################
         # Printing
