@@ -4,14 +4,21 @@ Changelog
 
 Forthcoming
 -----------
-* ...
+
+2.0.1 (2019-12-03)
+------------------
+* [trees] periodically publish snapshots, `#131 <https://github.com/splintered-reality/py_trees_ros/pull/131>`_,
+* [trees] permit setup visitors, provide a default with timings, `#129 <https://github.com/splintered-reality/py_trees_ros/pull/129>`_,
+* [trees] bugfix non-infinite timeout arg getting ignored, `#129 <https://github.com/splintered-reality/py_trees_ros/pull/129>`_,
+* [trees] snapshot now publishing tree changed flag and key access info, `#128 <https://github.com/splintered-reality/py_trees_ros/pull/128>`_,
+* [utilities] deprecate myargv for rclpy.utilities.remove_ros_args, `#130 <https://github.com/splintered-reality/py_trees_ros/pull/130>`_,
 
 2.0.0 (2019-11-20)
 ------------------
 * [blackboards] updated pretty printing to differentiate namespace vs attribute access, `#123 <https://github.com/splintered-reality/py_trees_ros/pull/123>`_
 * [blackboards] api updates for namespaced clients, `#122 <https://github.com/splintered-reality/py_trees_ros/pull/122>`_,
 * [tests] migrated tests from unittest to pytest
-* [transforms] From and To behaviours added, `#121 <https://github.com/splintered-reality/py_trees_ros/pull/121>`_
+* [transforms] behaviours for writing to and broadcasting from the blackboard, `#121 <https://github.com/splintered-reality/py_trees_ros/pull/121>`_
 * [transforms] add missing mocks and update to latest blackboard api, `#125 <https://github.com/splintered-reality/py_trees_ros/pull/125>`_
 
 1.2.1 (2019-10-08)
