@@ -7,12 +7,14 @@ package_name = 'py_trees_ros'
 
 setup(
     name=package_name,
-    version='2.0.1',  # also package.xml, doc/conf.py, py_trees_ros/version.py
+    version='2.0.3',  # also package.xml, doc/conf.py, py_trees_ros/version.py
     packages=find_packages(
         exclude=['doc*', 'tests*', 'graveyard*', 'scripts*']
     ),
     data_files=[
         ('share/' + package_name, ['package.xml']),
+        ('share/ament_index/resource_index/packages', [
+            'resources/py_trees_ros']),
     ],
     package_data={},
     install_requires=[],
