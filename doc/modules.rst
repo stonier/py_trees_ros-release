@@ -9,13 +9,13 @@ py_trees_ros
 .. automodule:: py_trees_ros
    :synopsis: is your robot misbehaving?
 
-py_trees_ros.actions
---------------------
+py_trees_ros.action_clients
+---------------------------
 
-.. automodule:: py_trees_ros.actions
+.. automodule:: py_trees_ros.action_clients
     :members:
     :show-inheritance:
-    :synopsis: behaviours that work with action servers/clients
+    :synopsis: behaviours that work with action clients
 
 py_trees_ros.battery
 --------------------
@@ -48,6 +48,14 @@ py_trees_ros.exceptions
     :members:
     :show-inheritance:
     :synopsis: custom exceptions for py_trees_ros
+
+py_trees_ros.publishers
+-----------------------
+
+.. automodule:: py_trees_ros.publishers
+    :members:
+    :show-inheritance:
+    :synopsis: publish data to the ROS network
 
 py_trees_ros.subscribers
 ------------------------
