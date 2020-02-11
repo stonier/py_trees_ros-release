@@ -6,6 +6,10 @@ Forthcoming
 -----------
 * ...
 
+2.0.7 (2020-02-10)
+------------------
+* [programs] graph discovery timeouts 1.0->2.0s, `#149 <https://github.com/splintered-reality/py_trees_ros/pull/149>`_
+
 2.0.6 (2020-02-06)
 ------------------
 * [behaviours] action client goals from blackboard behaviour, `#148 <https://github.com/splintered-reality/py_trees_ros/pull/148>`_
