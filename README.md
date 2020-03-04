@@ -1,3 +1,26 @@
+## py_trees_ros (eloquent) - 2.0.8-1
+
+The packages in the `py_trees_ros` repository were released into the `eloquent` distro by running `/usr/bin/bloom-release --track eloquent --rosdistro eloquent py_trees_ros` on `Wed, 04 Mar 2020 14:14:16 -0000`
+
+The `py_trees_ros` package was released.
+
+Version of package(s) in repository `py_trees_ros`:
+
+- upstream repository: https://github.com/splintered-reality/py_trees_ros.git
+- release repository: https://github.com/stonier/py_trees_ros-release.git
+- rosdistro version: `2.0.7-1`
+- old version: `2.0.7-2`
+- new version: `2.0.8-1`
+
+Versions of tools used:
+
+- bloom version: `0.9.1`
+- catkin_pkg version: `0.4.13`
+- rosdep version: `0.15.2`
+- rosdistro version: `0.8.0`
+- vcstools version: `0.1.40`
+
+
 ## py_trees_ros (eloquent) - 2.0.7-2
 
 The packages in the `py_trees_ros` repository were released into the `eloquent` distro by running `/usr/bin/bloom-release --track eloquent --rosdistro eloquent py_trees_ros` on `Wed, 04 Mar 2020 14:12:25 -0000`
