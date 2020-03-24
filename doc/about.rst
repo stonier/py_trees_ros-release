@@ -1,19 +1,15 @@
 About
 =====
 
-This package extends `py_trees`_ with behaviours, idioms, a tree manager
-(with ROS api) and command line tools for use in a ROS ecosystem.
-The documentation in this package is useful for referential purposes only - it
-includes the module level api documentation and instructions for the
-command line utilities.
+ROS Py Trees extends the `Py Trees`_ package with wrappers, patterns
+and debugging tools for use in ROS.
 
-If you are looking for tutorial-like documentation to get started with
-behaviour trees, refer to:
+If you are new to behaviour trees, start with the py_trees
+:ref:`Sphinx Documentation <pt:introduction-section>`, browse
+through a few of the readings and try the demos contained therein.
 
-* :ref:`py_trees <py_trees:introduction-section>`: behaviour tree basics
-* :ref:`py_trees_ros_tutorials <py_trees_ros_tutorials:about-section>`: using py_trees in ROS
+The :ref:`py-trees-ros-tutorials-section` section walks through the incremental development
+of a behaviour tree layer for a robot.
 
-.. _py_trees: https://github.com/splintered-reality/py_trees
-.. _py_trees_ros: https://github.com/splintered-reality/py_trees_ros
-.. _py_trees_ros_tutorials: https://github.com/splintered-reality/py_trees_ros_tutorials
+.. _Py Trees: https://github.com/stonier/py_trees
 

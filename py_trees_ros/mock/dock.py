@@ -1,44 +1,41 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 #
 # License: BSD
-#   https://raw.githubusercontent.com/splintered-reality/py_trees_ros/devel/LICENSE
+#   https://raw.githubusercontent.com/stonier/py_trees/devel/LICENSE
 #
 ##############################################################################
 # Documentation
 ##############################################################################
 
 """
-Mocks a docking controller
+Mocks a docking controller.
 """
-
 
 ##############################################################################
 # Imports
 ##############################################################################
 
-import py_trees_ros_interfaces.action as py_trees_actions
+import py_trees_msgs.msg as py_trees_msgs
 
-from . import actions
+from . import action_server
 
 ##############################################################################
-# Class
+# Classes
 ##############################################################################
 
 
-class Dock(actions.GenericServer):
+class Dock(action_server.ActionServer):
     """
     Simple server that docks if the goal is true, undocks otherwise.
     """
-    def __init__(self, duration=2.0):
-        super().__init__(
-            node_name="docking_controller",
-            action_name="dock",
-            action_type=py_trees_actions.Dock,
-            generate_feedback_message=self.generate_feedback_message,
-            goal_received_callback=self.goal_received_callback,
-            duration=duration
-        )
+    def __init__(self):
+        super(Dock, self).__init__(action_name="dock",
+                                   action_type=py_trees_msgs.DockAction,
+                                   worker=self.worker,
+                                   goal_received_callback=self.goal_received_callback,
+                                   duration=2.0
+                                   )
+        self.start()
 
     def goal_received_callback(self, goal):
         if goal.dock:
@@ -46,12 +43,8 @@ class Dock(actions.GenericServer):
         else:
             self.title = "UnDock"
 
-    def generate_feedback_message(self):
+    def worker(self):
         """
         Create some appropriate feedback.
         """
-        # TODO: send some feedback message
-        msg = py_trees_actions.Dock.Feedback(  # noqa
-            percentage_completed=self.percent_completed
-        )
-        return msg
+        self.action.action_feedback = py_trees_msgs.DockFeedback(self.percent_completed)

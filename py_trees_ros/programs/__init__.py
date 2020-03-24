@@ -1,13 +1,13 @@
 #
 # License: BSD
-#   https://raw.github.com/splintered-reality/py_trees_ros/license/LICENSE
+#   https://raw.githubusercontent.com/stonier/py_trees_ros/devel/LICENSE
 #
 ##############################################################################
 # Documentation
 ##############################################################################
 
 """
-Entry points to the programs (tools and utilities).
+This package contains py_trees_ros program script code.
 """
 
 ##############################################################################
@@ -15,6 +15,4 @@ Entry points to the programs (tools and utilities).
 ##############################################################################
 
 from . import blackboard_watcher
-from . import echo
-from . import multi_talker
 from . import tree_watcher

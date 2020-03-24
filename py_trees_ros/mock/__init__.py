@@ -7,11 +7,15 @@
 ##############################################################################
 
 """
-This package contains mock ROS nodes for py_trees tests.
+This package contains mock nodes for ROS py_trees simulations.
 """
 ##############################################################################
 # Imports
 ##############################################################################
 
-from . import actions
-from . import dock
+from . import action_server
+from . import battery
+from . import led_strip
+from . import move_base
+from . import rotate
+from . import safety_sensors
