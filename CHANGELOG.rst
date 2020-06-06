@@ -2,6 +2,22 @@
 Changelog
 =========
 
+Forthcoming
+-----------
+* ...
+
+0.5.21 (2020-06-06)
+-------------------
+* [trees] option for bagging, , `#159 <https://github.com/splintered-reality/py_trees_ros/pull/159>`_
+
+0.5.20 (2020-03-23)
+-------------------
+* [infra] don't fail for the runtime if qt is not found
+
+0.5.19 (2020-03-23)
+-------------------
+* [blackboards] log a one-shot warning instead of exceptions when pickle fails, `#157 <https://github.com/splintered-reality/py_trees_ros/pull/157>`_
+
 0.5.18 (2019-03-23)
 -------------------
 * [infra] merge kinetic and melodic release branches
