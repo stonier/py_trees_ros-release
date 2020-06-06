@@ -1,0 +1,12 @@
+Source: ros-melodic-py-trees-ros
+Section: misc
+Priority: optional
+Maintainer: Daniel Stonier <d.stonier@gmail.com>
+Build-Depends: debhelper (>= 9.0.0), python-setuptools, ros-melodic-catkin, ros-melodic-geometry-msgs, ros-melodic-py-trees, ros-melodic-python-qt-binding, ros-melodic-rostest, ros-melodic-rosunit
+Homepage: http://ros.org/wiki/py_trees
+Standards-Version: 3.9.2
+
+Package: ros-melodic-py-trees-ros
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, python-rospkg, python-termcolor, ros-melodic-actionlib, ros-melodic-actionlib-msgs, ros-melodic-dynamic-reconfigure, ros-melodic-geometry-msgs, ros-melodic-move-base-msgs, ros-melodic-nav-msgs, ros-melodic-py-trees, ros-melodic-py-trees-msgs, ros-melodic-rosbag, ros-melodic-rospy, ros-melodic-sensor-msgs, ros-melodic-std-msgs, ros-melodic-unique-id, ros-melodic-uuid-msgs
+Description: Ros extensions and behaviours for py_trees.
