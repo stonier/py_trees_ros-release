@@ -325,7 +325,7 @@ class BehaviourTree(py_trees.trees.BehaviourTree):
         ################################################################################
         # Parameters
         ################################################################################
-        self.node.set_parameters_callback(
+        self.node.add_on_set_parameters_callback(
             callback=self._set_parameters_callback
         )
 
@@ -929,8 +929,6 @@ class Watcher(object):
                         if child.id == current_child_id:
                             # somewhat ugly not having a consistent api here
                             if isinstance(behaviour, py_trees.composites.Selector):
-                                behaviour.current_child = child
-                            elif isinstance(behaviour, py_trees.composites.Chooser):
                                 behaviour.current_child = child
                             elif isinstance(behaviour, py_trees.composites.Sequence):
                                 behaviour.current_index = index
