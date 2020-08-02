@@ -1,0 +1,12 @@
+Source: ros-foxy-py-trees-ros
+Section: misc
+Priority: optional
+Maintainer: Daniel Stonier <d.stonier@gmail.com>
+Build-Depends: debhelper (>= 9.0.0), python3-pytest, python3-setuptools, ros-foxy-geometry-msgs, ros-foxy-py-trees, ros-foxy-py-trees-ros-interfaces, ros-foxy-rcl-interfaces, ros-foxy-rclpy, ros-foxy-ros2topic, ros-foxy-sensor-msgs, ros-foxy-std-msgs, ros-foxy-tf2-ros, ros-foxy-unique-identifier-msgs, ros-foxy-ros-workspace, python3-all, python3-setuptools
+Homepage: https://py-trees-ros.readthedocs.io/en/release-1.2.x/
+Standards-Version: 3.9.2
+
+Package: ros-foxy-py-trees-ros
+Architecture: any
+Depends: ${python3:Depends}, ${misc:Depends}, ros-foxy-geometry-msgs, ros-foxy-py-trees, ros-foxy-py-trees-ros-interfaces, ros-foxy-rcl-interfaces, ros-foxy-rclpy, ros-foxy-ros2topic, ros-foxy-sensor-msgs, ros-foxy-std-msgs, ros-foxy-tf2-ros, ros-foxy-unique-identifier-msgs, ros-foxy-ros-workspace
+Description: ROS2 extensions and behaviours for py_trees.
