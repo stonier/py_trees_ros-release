@@ -1,8 +1,7 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 #
 # License: BSD
-#   https://raw.githubusercontent.com/splintered-reality/py_trees_ros/devel/LICENSE
+#   https://raw.githubusercontent.com/stonier/py_trees/devel/LICENSE
 #
 ##############################################################################
 # Documentation
@@ -24,11 +23,9 @@ runs its own method on the behaviour to do as it wishes - logging, introspecting
 # Imports
 ##############################################################################
 
-
-import py_trees.visitors
-import py_trees_ros_interfaces.msg as py_trees_msgs
-import rclpy
-import time
+import py_trees
+import py_trees_msgs.msg as py_trees_msgs
+import rospy
 
 from . import conversions
 
@@ -37,41 +34,51 @@ from . import conversions
 ##############################################################################
 
 
-class SetupLogger(py_trees.visitors.VisitorBase):
+class SnapshotVisitor(py_trees.visitors.VisitorBase):
     """
-    Use as a visitor to :meth:`py_trees_ros.trees.TreeManager.setup`
-    to log the name and timings of each behaviours' setup
-    to the ROS debug channel.
+    Visits the tree in tick-tock, recording runtime information for publishing
+    the information as a snapshot view of the tree after the iteration has
+    finished.
 
-    Args:
-        node: an rclpy node that will provide debug logger
+    Attributes:
+        nodes (dict): dictionary of behaviour id (uuid.UUID) and status (:class:`~py_trees.common.Status`) pairs
+        running_nodes([uuid.UUID]): list of id's for behaviours which were traversed in the current tick
+        previously_running_nodes([uuid.UUID]): list of id's for behaviours which were traversed in the last tick
+
+    .. seealso::
+
+        This visitor should be used with the :class:`~py_trees_ros.trees.BehaviourTree` class to collect
+        information to publish for both bagging and the rqt monitoring plugin.
     """
-    def __init__(self, node: rclpy.node.Node):
-        super().__init__(full=True)
-        self.node = node
+    def __init__(self):
+        super(SnapshotVisitor, self).__init__()
+        self.nodes = {}
+        self.running_nodes = []
+        self.previously_running_nodes = []
 
     def initialise(self):
         """
-        Initialise the timestamping chain.
+        Switch running to previously running and then reset all other variables. This will
+        get called before a tree ticks.
         """
-        self.start_time = time.monotonic()
-        self.last_time = self.start_time
+        self.nodes = {}
+        self.previously_running_nodes = self.running_nodes
+        self.running_nodes = []
 
     def run(self, behaviour):
-        current_time = time.monotonic()
-        self.node.get_logger().debug(
-            "'{}'.setup: {:.4f}s".format(behaviour.name, current_time - self.last_time)
-        )
-        self.last_time = current_time
+        """
+        This method gets run as each behaviour is ticked. Catch the id and status and store it.
+        Additionally add it to the running list if it is :data:`~py_trees.common.Status.RUNNING`.
 
-    def finalise(self):
-        current_time = time.monotonic()
-        self.node.get_logger().debug(
-            "Total tree setup time: {:.4f}s".format(current_time - self.start_time)
-        )
+        Args:
+            behaviour (:class:`~py_trees.behaviour.Behaviour`): behaviour that is ticking
+        """
+        self.nodes[behaviour.id] = behaviour.status
+        if behaviour.status == py_trees.common.Status.RUNNING:
+            self.running_nodes.append(behaviour.id)
 
 
-class TreeToMsgVisitor(py_trees.visitors.VisitorBase):
+class LoggingVisitor(py_trees.visitors.VisitorBase):
     """
     Visits the entire tree and gathers all behaviours as
     messages for the tree logging publishers.
@@ -80,10 +87,7 @@ class TreeToMsgVisitor(py_trees.visitors.VisitorBase):
         tree (:class:`py_trees_msgs.msg.BehaviourTree`): tree representation in message form
     """
     def __init__(self):
-        """
-        Well
-        """
-        super(TreeToMsgVisitor, self).__init__()
+        super(LoggingVisitor, self).__init__()
         self.full = True  # examine all nodes
 
     def initialise(self):
@@ -92,12 +96,11 @@ class TreeToMsgVisitor(py_trees.visitors.VisitorBase):
         instance.
         """
         self.tree = py_trees_msgs.BehaviourTree()
-        # TODO: crystal api
-        # self.tree.stamp = rclpy.clock.Clock.now().to_msg()
+        self.tree.header.stamp = rospy.Time.now()
 
     def run(self, behaviour):
         """
-        Convert the behaviour into a message and append to the tree.
+        Convert the behaviour into a message and appendd it to the tree.
 
         Args:
             behaviour (:class:`~py_trees.behaviour.Behaviour`): behaviour to convert
